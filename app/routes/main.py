@@ -1,7 +1,21 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, jsonify
 from datetime import datetime, timedelta
+import os
+from google import genai
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 main_bp = Blueprint('main', __name__)
+
+# Initialize Gemini client
+def get_gemini_client():
+    """Initialize and return Gemini client."""
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable not set")
+    return genai.Client(api_key=api_key)
 
 def get_policy_dates():
     """Helper function to get consistent policy dates across all policy pages."""
@@ -43,3 +57,36 @@ def cookie_policy():
     return render_template('policy-pages/cookie-policy.html',
                          date_updated=date_updated,
                          date_effective=date_effective)
+
+@main_bp.route('/mental-health-chatbot')
+def mental_health_chatbot():
+    """Mental Health Chatbot page route."""
+    return render_template('mental-health-chatbot.html')
+
+@main_bp.route('/chat', methods=['POST'])
+def chat():
+    """Handle chat messages and return AI responses."""
+    try:
+        data = request.get_json()
+        user_message = data.get('message', '')
+        
+        if not user_message:
+            return jsonify({'error': 'No message provided'}), 400
+        
+        # Initialize Gemini client
+        client = get_gemini_client()
+        
+        # Create mental health focused prompt
+        system_prompt = """You are a compassionate mental health support chatbot. Provide helpful, empathetic responses while being clear that you are not a replacement for professional mental health care. Always encourage users to seek professional help when appropriate. Keep responses supportive and non-judgmental."""
+        
+        full_prompt = f"{system_prompt}\n\nUser: {user_message}\n\nResponse:"
+        
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[full_prompt]
+        )
+        
+        return jsonify({'response': response.text})
+        
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
