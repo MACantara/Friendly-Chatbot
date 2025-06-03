@@ -36,3 +36,6 @@ flask-hcaptcha
 
 # Password strength checking
 zxcvbn
+
+# Gemini AI (optional)
+google-genai
