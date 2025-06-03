@@ -86,7 +86,7 @@ def chat():
         full_prompt = f"{system_prompt}\n\nUser message: {user_message}\n\nPlease respond with empathy and support:"
         
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash-preview-05-20",
             contents=[full_prompt]
         )
         
